@@ -108,7 +108,9 @@ function formatTime(t: string | null) {
       <div ref="scrollArea" class="messages-area">
         <!-- 空状态 -->
         <div v-if="!chat.messages.length" class="empty-state animate-up">
-          <div class="empty-orb"><Sparkles :size="30" /></div>
+          <div class="empty-orb">
+            <img src="@/assets/avatar-zhizhi.png" alt="知知" class="orb-img" />
+          </div>
           <h1 class="empty-title">
             你好，我是 <span class="text-gradient">知知</span>
           </h1>
@@ -267,10 +269,17 @@ function formatTime(t: string | null) {
   border-radius: 22px;
   display: grid;
   place-items: center;
+  overflow: hidden;
   color: #08101f;
   background: var(--gradient-primary);
   box-shadow: var(--shadow-glow);
   animation: float 5s ease-in-out infinite;
+}
+.orb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 @keyframes float {
   0%, 100% { transform: translateY(0); }

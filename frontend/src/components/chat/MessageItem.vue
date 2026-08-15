@@ -30,8 +30,13 @@ async function copy() {
   <div class="msg" :class="[message.role, { streaming: message.streaming }]">
     <!-- 头像 -->
     <div class="avatar" :class="message.role">
-      <User v-if="message.role === 'user'" :size="17" />
-      <span v-else class="logo-zh">知</span>
+      <img
+        v-if="message.role === 'user'"
+        src="@/assets/avatar-user.png"
+        alt="我"
+        class="avatar-img"
+      />
+      <img v-else src="@/assets/avatar-zhizhi.png" alt="知知" class="avatar-img" />
     </div>
 
     <!-- 内容 -->
@@ -96,7 +101,13 @@ async function copy() {
   color: #08101f;
   box-shadow: var(--shadow-glow);
 }
-.logo-zh { font-size: 15px; }
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+}
 
 .bubble-wrap {
   max-width: 78%;
