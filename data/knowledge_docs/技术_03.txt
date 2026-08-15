@@ -1,0 +1,16 @@
+为统一公司后端开发标准，提高代码质量和团队协作效率，特制定本规范。
+一、技术选型
+1. 开发语言：Python 3.10+，Java 11+。
+2. Web 框架：Flask / Django（Python），Spring Boot（Java）。
+3. 数据库：MySQL 8.0+，PostgreSQL 14+。
+4. 缓存：Redis 6.0+。
+二、编码规范
+1. 代码命名采用驼峰命名法，类名首字母大写。
+2. 函数和方法须添加文档字符串（docstring）。
+3. 每行代码不超过 120 字符。
+4. 禁止使用魔法数字，须定义为常量。
+三、Git 工作流
+1. 主分支：main（生产环境），develop（开发环境）。
+2. 功能分支：feature/xxx，从 develop 拉取。
+3. 提交信息须符合 Conventional Commits 规范。
+4. 代码合并前须通过 Code Review 和 CI 测试。

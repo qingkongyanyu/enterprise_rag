@@ -1,0 +1,12 @@
+**/node_modules
+**/__pycache__
+**/*.pyc
+.git
+.idea
+.vscode
+data/vector_store
+data/embedding_cache
+data/chat_memory
+**/*.log
+backend/.env
+frontend/.vite

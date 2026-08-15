@@ -1,0 +1,54 @@
+# ===== 环境与密钥 =====
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+# 注意：不忽略 dist/（frontend/dist 构建产物刻意入库，保证免 Node 复现）
+
+# ===== 运行时数据（可重建，不入库） =====
+data/vector_store/
+data/embedding_cache/
+backend/chat_memory/
+data/chat_memory/
+chat_memory/
+*.faiss
+*.npy
+index.pkl
+index.faiss
+
+# ===== Node / 前端 =====
+frontend/node_modules/
+frontend/*.tsbuildinfo
+*.tsbuildinfo
+# 说明：frontend/dist 构建产物是刻意提交的，保证 clone 后仅需 Python 即可运行，
+#      不需要安装 Node 环境。故此处不忽略 dist。
+
+# ===== IDE / OS =====
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ===== 大型本地模型文件 =====
+*.onnx
+*.safetensors
+*.bin
+models/
