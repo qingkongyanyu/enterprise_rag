@@ -23,6 +23,7 @@ htmlcov/
 # 注意：不忽略 dist/（frontend/dist 构建产物刻意入库，保证免 Node 复现）
 
 # ===== 运行时数据（可重建，不入库） =====
+data/_backup_*/
 data/vector_store/
 data/embedding_cache/
 backend/chat_memory/
