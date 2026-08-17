@@ -73,19 +73,30 @@ export const useChatStore = defineStore('chat', {
     },
 
     // ---------- 提问 ----------
-    async ask(question: string) {
+    async ask(
+      question: string,
+      options: { appendUser?: boolean; insertAt?: number } = {},
+    ) {
       if (this.sending) return
       this.sending = true
 
       const userMsg: ChatMessage = { id: msgId(), role: 'user', content: question, sources: [] }
-      const botMsg: ChatMessage = {
+      // 重答场景：用户消息已在列表中，不再重复插入；bot 消息原位替换
+      if (options.appendUser !== false) {
+        this.messages.push(userMsg)
+      }
+      const insertAt = options.insertAt ?? this.messages.length
+      // ⚠️ 必须先插入再取引用：插入响应式数组后 Vue 会包装成代理对象，
+      // 只有通过数组索引取回的引用（liveMsg）才能触发视图更新。
+      // 直接持有插入前的原始对象去改 content，页面不会刷新（刷新后才可见）。
+      this.messages.splice(insertAt, 0, {
         id: msgId(),
         role: 'assistant',
         content: '',
         sources: [],
         streaming: true,
-      }
-      this.messages.push(userMsg, botMsg)
+      } as ChatMessage)
+      const liveMsg = this.messages[insertAt]
 
       const controller = new AbortController()
       this.activeController = controller
@@ -98,14 +109,14 @@ export const useChatStore = defineStore('chat', {
               this.currentSessionId = event.session_id
               localStorage.setItem('rag_session_id', event.session_id!)
             } else if (event.type === 'delta') {
-              botMsg.content += event.text ?? ''
+              liveMsg.content += event.text ?? ''
             } else if (event.type === 'sources') {
-              botMsg.sources = event.sources ?? []
+              liveMsg.sources = event.sources ?? []
             } else if (event.type === 'done') {
-              botMsg.elapsedMs = event.elapsed_ms
+              liveMsg.elapsedMs = event.elapsed_ms
             } else if (event.type === 'error') {
-              botMsg.error = true
-              botMsg.content = event.message ?? '生成失败'
+              liveMsg.error = true
+              liveMsg.content = event.message ?? '生成失败'
             }
           },
           controller.signal,
@@ -113,11 +124,11 @@ export const useChatStore = defineStore('chat', {
       } catch (err) {
         const isAbort = (err as Error)?.name === 'AbortError'
         if (!isAbort) {
-          botMsg.error = true
-          botMsg.content = (err as Error).message || '网络错误，请稍后重试'
+          liveMsg.error = true
+          liveMsg.content = (err as Error).message || '网络错误，请稍后重试'
         }
       } finally {
-        botMsg.streaming = false
+        liveMsg.streaming = false
         this.sending = false
         this.activeController = null
         this.refreshSessions()

@@ -40,10 +40,12 @@ function onSend(text: string) {
 }
 
 function onRegenerate(index: number) {
-  // 找到该条助手消息之前的用户消息，重新提问
+  // 找到该条助手消息之前的用户消息，原位替换重答（旧 bot 移除，新 bot 插入原位置）
   for (let i = index - 1; i >= 0; i--) {
     if (chat.messages[i].role === 'user') {
-      chat.ask(chat.messages[i].content)
+      const question = chat.messages[i].content
+      chat.messages.splice(index, 1)
+      chat.ask(question, { appendUser: false, insertAt: index })
       return
     }
   }
