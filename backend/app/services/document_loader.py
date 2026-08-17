@@ -77,12 +77,22 @@ def read_all_docs(directory: Path = KNOWLEDGE_DOCS_DIR) -> list[tuple[str, str]]
 
 def save_doc(directory: Path, filename: str, content: bytes | str) -> Path:
     """保存上传文档，返回路径。同名文件将被覆盖。"""
+    # 防路径穿越：仅允许纯文件名（不含路径分隔符 / 相对路径）
+    if (
+        not filename
+        or filename in {".", ".."}
+        or "/" in filename
+        or "\\" in filename
+    ):
+        raise ValueError("非法文件名")
     directory.mkdir(parents=True, exist_ok=True)
     if isinstance(content, str):
         content = content.encode("utf-8")
     if len(content) > MAX_FILE_SIZE:
         raise ValueError("文件过大，单个文档不得超过 5MB")
-    path = directory / filename
+    path = (directory / filename).resolve()
+    if directory.resolve() not in path.parents:
+        raise ValueError("非法路径")
     with open(path, "wb") as f:
         f.write(content)
     return path

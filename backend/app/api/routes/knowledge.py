@@ -34,7 +34,10 @@ async def upload_document(request: Request, file: UploadFile = File(...)):
     if not filename or not is_supported(filename):
         raise ValidationError("仅支持 .txt / .md 格式的文件")
     content = await file.read()
-    result = services.knowledge.upload_document(filename, content)
+    try:
+        result = services.knowledge.upload_document(filename, content)
+    except ValueError as e:
+        raise ValidationError(str(e)) from e
     return ApiResponse.success(result, message="文档上传成功并已重建索引")
 
 
@@ -42,5 +45,8 @@ async def upload_document(request: Request, file: UploadFile = File(...)):
 def delete_document(filename: str, request: Request):
     """删除文档并同步重建索引。"""
     services = get_services(request)
-    services.knowledge.delete_document(filename)
+    try:
+        services.knowledge.delete_document(filename)
+    except ValueError as e:
+        raise ValidationError(str(e)) from e
     return ApiResponse.success({"name": filename}, message="文档已删除")

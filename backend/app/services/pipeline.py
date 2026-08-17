@@ -74,12 +74,13 @@ class RAGPipeline:
         history_prompt = self.memory.build_history_prompt(session_id)
 
         # 无历史上下文时启用响应缓存（有历史则结果因人而异，不缓存）
+        # 注意：命中缓存时用当前 session_id 重建返回对象，避免串号
         cache_key = f"{question}||{history_prompt == ''}"
         if not history_prompt:
             cached = self._cache.get(cache_key)
             if cached is not None:
                 self._metrics["cache_hits"] += 1
-                return cached
+                return cached.model_copy(update={"session_id": session_id})
 
         t0 = time.monotonic()
         retriever = self.knowledge.get_retriever()
@@ -113,12 +114,13 @@ class RAGPipeline:
             grounded=grounded,
         )
 
-        # 记忆 + 缓存
+        # 记忆 + 缓存（仅 grounded 命中才缓存；无命中兜底语不缓存，
+        # 否则后续上传文档后同问题仍会命中旧兜底）
         self.memory.add_turn(
             session_id, question, data.answer,
             sources=[s.model_dump() for s in sources],
         )
-        if not history_prompt:
+        if grounded and not history_prompt:
             self._cache.put(cache_key, data)
 
         self._metrics["chat_count"] += 1
@@ -148,6 +150,7 @@ class RAGPipeline:
                 reranker=self.knowledge.get_reranker(),
             )
 
+            sources: list[SourceDoc] = []
             if not retrieved:
                 yield {"type": "delta", "text": NO_GROUNDED_REPLY}
                 yield {"type": "sources", "sources": []}

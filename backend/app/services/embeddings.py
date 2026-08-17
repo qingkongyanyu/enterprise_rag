@@ -57,13 +57,17 @@ class EmbeddingService:
 
         normalized = [normalize_text(t) for t in texts]
         missing, _ = self._cache.batch_lookup(normalized)
+        # 计算缺失部分（_encode_fresh 内部会写回磁盘缓存）
         if missing:
-            # 计算缺失部分（_encode_fresh 内部会写回磁盘缓存）
             self._encode_fresh(missing, is_query=False)
 
-        # 全部命中缓存后，按输入顺序取回（保证返回顺序与 texts 一致）
-        vectors = [self._cache.lookup(t) for t in normalized]
-        vectors = [v for v in vectors if v is not None]  # 防御性：确保都有值
+        # 按输入顺序取回向量；缓存回读偶发失败时现场重算该条，保证数量一致
+        vectors: list[np.ndarray] = []
+        for t in normalized:
+            v = self._cache.lookup(t)
+            if v is None:
+                v = self._encode_fresh([t], is_query=False)[0]
+            vectors.append(v)
         return _normalize_rows(np.vstack(vectors).astype(np.float32))
 
     def embed_query(self, text: str) -> np.ndarray:

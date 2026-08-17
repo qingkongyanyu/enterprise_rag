@@ -72,9 +72,9 @@ class MemoryStore:
             "sources": sources or [],
             "timestamp": datetime.now().isoformat(timespec="seconds"),
         })
-        # 只保留最近 max_turns*2 条，控制文件体积
-        if len(history) > self.max_turns * 2:
-            history = history[-self.max_turns * 2 :]
+        # 只保留最近 max_turns 轮（每条记录即一轮），控制文件体积
+        if len(history) > self.max_turns:
+            history = history[-self.max_turns :]
         self._save(session_id, history)
 
     def get_history(self, session_id: str) -> list[dict]:
@@ -117,7 +117,7 @@ class MemoryStore:
     def build_history_prompt(self, session_id: str, max_turns: int | None = None) -> str:
         """把最近几轮对话格式化为字符串，注入 system prompt。"""
         limit = max_turns or self.max_turns
-        history = self._load(session_id)[-limit * 2 :]  # 每轮 2 条
+        history = self._load(session_id)[-limit:]  # 每条记录即一轮
         if not history:
             return ""
         lines = []
