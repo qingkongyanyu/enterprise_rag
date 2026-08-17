@@ -7,13 +7,13 @@ services:
     build: .
     container_name: enterprise-rag
     ports:
-      - "8000:8000"
+      - "8001:8001"
     env_file:
       # 把 .env.example 复制为 backend/.env 并填写真实 LLM_API_KEY
       - ./backend/.env
     environment:
       HOST: 0.0.0.0
-      PORT: 8000
+      PORT: 8001
     volumes:
       - rag_data:/app/data
     restart: unless-stopped

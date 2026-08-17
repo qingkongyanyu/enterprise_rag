@@ -3,7 +3,7 @@
 统一前缀：`/api/v1`；统一响应包裹：`{ "code": 0, "message": "ok", "data": {...} }`。
 
 - `code == 0` 表示成功；非 0 表示失败（HTTP 状态码一致）。
-- 交互式文档：启动后访问 `http://localhost:8000/api/docs`。
+- 交互式文档：启动后访问 `http://localhost:8001/api/docs`。
 
 ## 1. 对话
 
@@ -56,7 +56,7 @@ POST /api/v1/chat/stream
 | `error` | `message` | 错误 |
 
 ```bash
-curl -N -X POST http://localhost:8000/api/v1/chat/stream \
+curl -N -X POST http://localhost:8001/api/v1/chat/stream \
   -H "Content-Type: application/json" \
   -d '{"question":"差旅住宿标准是多少？"}'
 ```

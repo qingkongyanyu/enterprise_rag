@@ -15,13 +15,13 @@ npm install
 ## 常用命令
 
 ```bash
-# 启动后端（默认 8000）
+# 启动后端（默认 8001）
 cd backend && python run.py
 
 # 启动后端（热重载开发）
 cd backend && python run.py --reload
 
-# 前端开发服务器（5173，/api 代理到 8000）
+# 前端开发服务器（5173，/api 代理到 8001）
 cd frontend && npm run dev
 
 # 前端类型检查 + 生产构建

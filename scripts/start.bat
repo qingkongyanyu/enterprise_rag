@@ -1,11 +1,99 @@
 @echo off
-REM ä¸€é”®å¯åŠ¨åŽç«¯æœåŠ¡ï¼ˆWindowsï¼‰
-cd /d %~dp0\..\backend
+setlocal enabledelayedexpansion
+title ÖªÖª RAG Ò»¼üÆô¶¯
+cd /d "%~dp0\..\backend"
 
-if not exist ..\data\vector_store\index.faiss (
-  echo [init] é¦–æ¬¡è¿è¡Œï¼šåˆå§‹åŒ–çŸ¥è¯†åº“ç´¢å¼•...
-  python scripts\init_knowledge.py --generate
+echo ============================================================
+echo   ÖªÖª - ÆóÒµË½ÓÐÖªÊ¶¿â RAG ÖÇÄÜÎÊ´ðÏµÍ³
+echo   Ò»¼üÆô¶¯½Å±¾ (Windows)
+echo ============================================================
+echo.
+
+REM ---------- 1. ¼ì²â Python ----------
+set "PY=python"
+%PY% --version >nul 2>&1
+if errorlevel 1 (
+    echo [´íÎó] Î´ÕÒµ½ Python£¬ÇëÏÈ°²×° Python 3.10+ ²¢¹´Ñ¡ "Add to PATH"
+    pause
+    exit /b 1
+)
+for /f "delims=" %%v in ('%PY% --version 2^>^&1') do echo [»·¾³] %%v
+
+REM ---------- 2. ¼ì²éÒÀÀµ ----------
+%PY% -c "import fastapi, uvicorn, faiss, pydantic_settings, openai, jieba, sentence_transformers" >nul 2>&1
+if errorlevel 1 (
+    echo [°²×°] ¼ì²âµ½È±ÉÙÒÀÀµ£¬ÕýÔÚ°²×°£¨Ê×´ÎÐèÊý·ÖÖÓ£¬ÇëÄÍÐÄµÈ´ý£©...
+    %PY% -m pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+    if errorlevel 1 (
+        echo [ÖØÊÔ] ¾µÏñÔ´°²×°Ê§°Ü£¬¸ÄÓÃ¹Ù·½Ô´ÖØÊÔ...
+        %PY% -m pip install -r requirements.txt
+    )
+    if errorlevel 1 (
+        echo [´íÎó] ÒÀÀµ°²×°Ê§°Ü£¬Çë¼ì²éÍøÂçºóÖØÊÔ£¬»òÊÖ¶¯Ö´ÐÐ£º
+        echo        pip install -r requirements.txt
+        pause
+        exit /b 1
+    )
+    echo [Íê³É] ÒÀÀµ°²×°Íê³É
+) else (
+    echo [»·¾³] ÒÀÀµÒÑ¾ÍÐ÷
 )
 
-echo [start] å¯åŠ¨æœåŠ¡: http://localhost:8000
-python run.py
+REM ---------- 3. ¼ì²é .env ÅäÖÃ ----------
+if not exist ".env" (
+    echo.
+    echo [ÅäÖÃ] Î´ÕÒµ½ backend\.env£¬ÕýÔÚ´ÓÄ£°å´´½¨...
+    copy /y "..\.env.example" ".env" >nul
+    echo [ÅäÖÃ] ÒÑÉú³É backend\.env
+    echo.
+    echo  [ÌáÊ¾] Çë±à¼­ backend\.env£¬½« LLM_API_KEY ¸ÄÎªÄãµÄÕæÊµÃÜÔ¿
+    echo         £¨°¢ÀïÔÆ°ÙÁ¶ DashScope »ñÈ¡£ºhttps://bailian.console.aliyun.com/£©
+    echo         Ò²¿ÉÒÔÖ±½ÓÆô¶¯£¬½çÃæ»áÌáÊ¾ LLM Î´ÅäÖÃ
+    echo.
+    choice /c YN /m "ÊÇ·ñÏÖÔÚ´ò¿ª .env ±à¼­£¨ÍÆ¼öÑ¡ Y£©£¿"
+    if errorlevel 2 goto skip_env_edit
+    notepad ".env"
+    :skip_env_edit
+    echo.
+) else (
+    echo [ÅäÖÃ] .env ÒÑ´æÔÚ
+)
+
+REM ---------- 4. ³õÊ¼»¯ÖªÊ¶¿âË÷Òý ----------
+if not exist "..\data\vector_store\index.faiss" (
+    echo.
+    echo [³õÊ¼»¯] Ê×´ÎÔËÐÐ£¬ÕýÔÚÉú³ÉÊ¾ÀýÎÄµµ²¢¹¹½¨Ë÷Òý£¨Ê×´ÎÐèÏÂÔØÇ¶ÈëÄ£ÐÍ£¬¿ÉÄÜ½ÏÂý£©...
+    %PY% scripts\init_knowledge.py --generate
+    if errorlevel 1 (
+        echo [´íÎó] ÖªÊ¶¿â³õÊ¼»¯Ê§°Ü£¬Çë²é¿´ÉÏ·½ÈÕÖ¾
+        pause
+        exit /b 1
+    )
+) else (
+    echo [³õÊ¼»¯] ÖªÊ¶¿âË÷ÒýÒÑ´æÔÚ£¬Ìø¹ý
+)
+
+REM ---------- 5. ¶Ë¿ÚÕ¼ÓÃ¼ì²â ----------
+set "PORT=8001"
+set "BUSY="
+for /f "tokens=5" %%p in ('netstat -ano ^| findstr ":8001" ^| findstr "LISTENING"') do set "BUSY=%%p"
+if defined BUSY (
+    echo.
+    echo [¾¯¸æ] ¶Ë¿Ú 8001 ÒÑ±»½ø³Ì PID=%BUSY% Õ¼ÓÃ
+    echo        ÕýÔÚ³¢ÊÔÓÃ 8002 ¶Ë¿ÚÆô¶¯...
+    set "PORT=8002"
+)
+
+echo.
+echo ============================================================
+echo   ÕýÔÚÆô¶¯·þÎñ...
+echo   ·ÃÎÊµØÖ·: http://127.0.0.1:!PORT!
+echo   ¹Ø±Õ±¾´°¿Ú¼´Í£Ö¹·þÎñ
+echo ============================================================
+echo.
+
+REM ---------- 6. Æô¶¯²¢×Ô¶¯´ò¿ªä¯ÀÀÆ÷ ----------
+start "" cmd /c "timeout /t 4 /nobreak >nul && start http://127.0.0.1:!PORT!"
+%PY% run.py --port !PORT! --no-browser
+
+endlocal

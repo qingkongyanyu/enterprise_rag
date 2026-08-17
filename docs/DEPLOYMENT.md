@@ -12,6 +12,20 @@
 
 > 首次运行需要联网下载嵌入模型 `BAAI/bge-small-zh`（约 100MB）。国内网络已默认走 `hf-mirror.com` 镜像。
 
+## 〇、Windows 一键启动（最简单）
+
+```bat
+:: 1. 复制并填写密钥
+copy .env.example backend\.env
+::    编辑 backend\.env，把 LLM_API_KEY 换成真实 Key
+
+:: 2. 双击运行 scripts\start.bat
+```
+
+`start.bat` 会自动完成：检测 Python → 安装缺失依赖（清华镜像，失败自动回退官方源）→ 引导配置 `.env` → 生成示例文档并构建索引 → 检测端口占用（8001 被占自动换 8002）→ 启动服务并自动打开浏览器。
+
+Linux/macOS 使用：`bash scripts/start.sh`，流程相同。
+
 ## 一、Docker 部署
 
 ### 1. 准备密钥
@@ -29,7 +43,7 @@ docker compose up --build
 
 - 首次启动会自动：生成示例文档 → 下载嵌入模型 → 构建向量索引（可能耗时几分钟）。
 - 数据保存在命名卷 `rag_data`，重启不丢失、不重复构建。
-- 访问 http://localhost:8000
+- 访问 http://localhost:8001
 
 ### 3. 常用命令
 
@@ -92,8 +106,8 @@ python scripts/init_knowledge.py
 
 ```bash
 python run.py
-# 访问 http://localhost:8000
-# API 文档 http://localhost:8000/api/docs
+# 访问 http://localhost:8001
+# API 文档 http://localhost:8001/api/docs
 ```
 
 ### 5. （可选）前端开发模式
@@ -104,7 +118,7 @@ python run.py
 cd frontend
 npm install
 npm run dev
-# 访问 http://localhost:5173，/api 已自动代理到 8000
+# 访问 http://localhost:5173，/api 已自动代理到 8001
 ```
 
 重新构建生产产物：
@@ -115,7 +129,7 @@ npm run build
 
 ## 三、生产部署建议
 
-- **反向代理**：用 Nginx / Caddy 给 8000 端口加 HTTPS，SSE 流式请关闭代理缓冲（本服务已返回 `X-Accel-Buffering: no`）。
+- **反向代理**：用 Nginx / Caddy 给 8001 端口加 HTTPS，SSE 流式请关闭代理缓冲（本服务已返回 `X-Accel-Buffering: no`）。
 - **密钥管理**：生产环境建议把密钥放环境变量或密钥管理服务，而不是 `.env` 文件。
 - **模型预下载**：可把 `data/embedding_cache` 与向量索引一同备份，避免每次初始化重下载/重计算。
 - **后台运行**：用 `systemd` / `pm2` / supervisor 托管 `python run.py`。

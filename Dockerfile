@@ -43,7 +43,7 @@ RUN mkdir -p /app/data
 
 WORKDIR /app/backend
 
-EXPOSE 8000
+EXPOSE 8001
 
 # 启动：首次运行自动生成示例文档并构建索引（模型下载较慢），随后启动服务
-CMD ["sh", "-c", "python scripts/init_knowledge.py --generate; exec python run.py --port 8000"]
+CMD ["sh", "-c", "python scripts/init_knowledge.py --generate; exec python run.py --port 8001"]
