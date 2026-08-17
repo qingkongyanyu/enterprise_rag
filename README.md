@@ -36,9 +36,15 @@
 
 ## 🧰 技术栈
 
-- **后端**：FastAPI · uvicorn · Pydantic · FAISS · sentence-transformers（bge-small-zh）· 自实现 BM25
-- **前端**：Vue 3（Composition API）· TypeScript · Vite · Pinia · Vue Router · marked + highlight.js
-- **LLM**：OpenAI 兼容接口抽象，默认通义千问（DashScope），可无缝切换 OpenAI / Ollama / 火山方舟等
+| 层 | 技术 |
+|----|------|
+| 后端 | FastAPI · Uvicorn · pydantic v2 · **openai SDK**（兼容接口） |
+| 嵌入/检索 | sentence-transformers（bge-small-zh）· FAISS · 自研 BM25（jieba+numpy）· bge-reranker（可选） |
+| 持久化 | 文件型（FAISS 索引 + JSON 会话记忆） |
+| 前端 | Vue 3 · TypeScript · Vite · Pinia · Vue Router · marked + highlight.js |
+| LLM | OpenAI 兼容抽象（openai 官方 SDK），默认通义千问，可切换 OpenAI / Ollama / 火山方舟 |
+
+> 每项技术的**版本、职责、选型理由与备选对比**详见 [docs/TECH_STACK.md](docs/TECH_STACK.md)。
 
 ## 🏗️ 系统架构
 
@@ -71,7 +77,20 @@
 
 ## 🚀 快速开始
 
-### 方式一：Docker（推荐，零门槛）
+### 方式零：Windows 一键启动（推荐）
+
+```bash
+# 1. 准备环境变量
+cp .env.example backend/.env
+#    编辑 backend/.env，填入真实的 LLM_API_KEY（获取：https://bailian.console.aliyun.com/）
+
+# 2. 双击运行（自动装依赖 / 初始化索引 / 启动服务 / 打开浏览器）
+scripts\start.bat
+```
+
+脚本会自动完成：检测 Python → 安装缺失依赖 → 引导配置 `.env` → 生成示例文档并构建索引 → 端口占用检测 → 启动服务并自动打开 `http://127.0.0.1:8001`。
+
+### 方式一：Docker（零门槛）
 
 ```bash
 # 1. 准备环境变量
@@ -82,7 +101,7 @@ cp .env.example backend/.env
 docker compose up --build
 ```
 
-访问 http://localhost:8000
+访问 http://localhost:8001
 
 ### 方式二：纯 Python + Node（本地开发）
 
@@ -93,7 +112,7 @@ python -m venv .venv && .venv/Scripts/activate   # Windows
 pip install -r requirements.txt
 cp ../.env.example .env                          # 填写 LLM_API_KEY
 python scripts/init_knowledge.py --generate      # 生成示例文档 + 构建索引
-python run.py                                    # http://localhost:8000
+python run.py                                    # http://localhost:8001
 
 # 2. 前端（可选，开发模式热更新）
 cd frontend
@@ -110,6 +129,9 @@ python scripts/init_knowledge.py --generate
 python run.py
 # 前端 dist 已随仓库提交，FastAPI 直接托管，无需安装 Node
 ```
+
+> ⚠️ 运行后请访问 **http://127.0.0.1:8001**（脚本会自动打开）。不要用 `0.0.0.0` 访问——那是监听地址，浏览器打不开。
+> ⚠️ 若端口 8001 被占用，`start.bat` 会自动改用 8002；也可手动 `python run.py --port 9000` 指定端口。
 
 ## 📸 界面预览
 
@@ -160,19 +182,36 @@ enterprise_rag/
 
 | 文档 | 内容 |
 | --- | --- |
+| [docs/TECH_STACK.md](docs/TECH_STACK.md) | 技术栈详解：每项技术的版本、职责、选型理由与备选对比 |
 | [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) | 项目介绍、难点与解决方案（面试用） |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 系统架构与模块职责 |
 | [docs/RAG_OPTIMIZATION.md](docs/RAG_OPTIMIZATION.md) | RAG 调优实践与原理 |
 | [docs/API_REFERENCE.md](docs/API_REFERENCE.md) | 全部接口文档（含 curl 示例） |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker / 手动部署指南 |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | 本地开发与测试指南 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 贡献指南（开发 / 规范 / PR 流程） |
+| [SECURITY.md](SECURITY.md) | 安全策略与漏洞报告 |
 
 ## 🧪 测试
 
 ```bash
 cd backend
-python -m pytest tests/ -v    # 23 个用例：分块 / BM25 / 混合检索 / API
+python -m pytest tests/ -v    # 27 个用例：分块 / BM25 / 混合检索 / API
 ```
+
+## ❓ 常见问题
+
+**Q：启动后浏览器打不开 / 白屏？**
+A：① 访问地址用 `http://127.0.0.1:8001`，不要用 `http://0.0.0.0:8001`（监听地址，浏览器无法访问）；② 检查端口是否被其他程序占用（`start.bat` 会自动检测并切换 8002）；③ 确认启动日志出现 `Uvicorn running on`，且控制台输出 `访问地址`。
+
+**Q：提示「大模型服务未配置 / 503」？**
+A：编辑 `backend/.env`，确认 `LLM_API_KEY` 已填入真实密钥且 `LLM_BASE_URL` / `LLM_MODEL` 与服务商匹配。
+
+**Q：首次启动下载嵌入模型很慢？**
+A：国内已默认走 `hf-mirror.com` 镜像；也可在 `.env` 中设置 `HF_ENDPOINT`。
+
+**Q：想用自己的文档？**
+A：把 .txt/.md 文件放入 `data/knowledge_docs/`，然后在「知识库」页面点击「构建索引」，或运行 `python scripts/init_knowledge.py`。
 
 ## ⚖️ License
 
