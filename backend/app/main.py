@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
@@ -98,7 +99,12 @@ def create_app(services: Optional[ServiceRegistry] = None) -> FastAPI:
 
 
 def _mount_frontend(app: FastAPI) -> None:
-    """挂载 frontend/dist：/assets 静态资源 + 其余路径回退 index.html。"""
+    """挂载 frontend/dist：/assets 静态资源 + 其余路径回退 index.html。
+
+    缓存策略：
+    - index.html 返回 Cache-Control: no-cache（每次重新验证，保证新构建立即可见）
+    - /assets 下为 hash 文件名，长期缓存（immutable），避免重复下载
+    """
     dist: Path = FRONTEND_DIST_DIR
     if not dist.exists() or not (dist / "index.html").exists():
         logger.warning("未找到前端构建产物 %s，将仅提供 API 服务", dist)
@@ -106,12 +112,29 @@ def _mount_frontend(app: FastAPI) -> None:
 
     assets_dir = dist / "assets"
     if assets_dir.exists():
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+        class _HashedAssets(StaticFiles):
+            """hash 文件名资源：一年强缓存，无需重新验证。"""
+
+            def __init__(self, directory: Path):
+                super().__init__(directory=directory)
+
+            def file_response(
+                self,
+                full_path: Path,
+                stat_result: os.stat_result,
+                scope: dict,
+                status_code: int = 200,
+            ) -> FileResponse:
+                resp = super().file_response(full_path, stat_result, scope, status_code)
+                resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+                return resp
+
+        app.mount("/assets", _HashedAssets(directory=assets_dir), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def _spa_fallback(full_path: str):
-        # API 路径不允许被 SPA 吞掉
-        if full_path.startswith("api/"):
+        # API 路径不允许被 SPA 吞掉（含精确的 /api）
+        if full_path == "api" or full_path.startswith("api/"):
             return JSONResponse(
                 status_code=404,
                 content={"code": 404, "message": "接口不存在", "data": None},
@@ -119,4 +142,8 @@ def _mount_frontend(app: FastAPI) -> None:
         target = dist / full_path
         if full_path and target.is_file():
             return FileResponse(target)
-        return FileResponse(dist / "index.html")
+        # index.html：no-cache，每次请求都回源验证，构建后普通刷新即可拿到新版
+        return FileResponse(
+            dist / "index.html",
+            headers={"Cache-Control": "no-cache"},
+        )
