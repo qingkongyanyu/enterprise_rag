@@ -212,6 +212,20 @@ A：国内已默认走 `hf-mirror.com` 镜像；也可在 `.env` 中设置 `HF_E
 **Q：想用自己的文档？**
 A：把 .txt/.md 文件放入 `data/knowledge_docs/`，然后在「知识库」页面点击「构建索引」，或运行 `python scripts/init_knowledge.py`。
 
+## 🔗 相关项目
+
+作者 [Qingk](https://github.com/qingkongyanyu) 的其它开源项目：
+
+- [drink_rag_robot](https://github.com/qingkongyanyu/drink_rag_robot) — 饮料行业 RAG 知识问答机器人
+- [love-emotion-agent](https://github.com/qingkongyanyu/love-emotion-agent) — AI 情感对话智能体（大模型对话 + 语音合成）
+- [xiaowen_weather_agent](https://github.com/qingkongyanyu/xiaowen_weather_agent) — 智能天气助手 Agent
+- [xiaoyu_ai_full](https://github.com/qingkongyanyu/xiaoyu_ai_full) — AI 情感陪伴智能体（对话 / 语音 / 长期记忆 RAG）
+- [ecom_churn_web](https://github.com/qingkongyanyu/ecom_churn_web) — 电商用户流失预测 Web 应用
+- [business-district-selection](https://github.com/qingkongyanyu/business-district-selection) — 城市商圈选址与客流异常检测平台
+- [wine-quality-prediction](https://github.com/qingkongyanyu/wine-quality-prediction) — 葡萄酒品质预测与理化指标分析
+- [enterprise-credit-risk](https://github.com/qingkongyanyu/enterprise-credit-risk) — 企业信用风险评级系统
+- [ecommerce-repurchase-prediction](https://github.com/qingkongyanyu/ecommerce-repurchase-prediction) — 电商复购预测（PCA + 因子分析建模）
+
 ## ⚖️ License
 
-[MIT](LICENSE) © 2026
+[MIT](LICENSE) © 2026 Qingk
