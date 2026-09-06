@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -20,6 +21,42 @@ logger = logging.getLogger(__name__)
 
 CHUNKS_FILENAME = "chunks.json"
 INDEX_FILENAME = "index.faiss"
+
+
+def _is_ascii(path: Path) -> bool:
+    """路径是否全 ASCII（faiss 在 Windows 上仅能按 ANSI 编码打开文件）。"""
+    try:
+        str(path).encode("ascii")
+        return True
+    except UnicodeEncodeError:
+        return False
+
+
+def _faiss_read_index(index_path: Path):
+    """faiss 在 Windows 上按 ANSI 编码打开文件，路径含中文等非 ASCII 字符会报
+    "could not open ... for reading"。规避：临时把工作目录切到索引所在目录，
+    用相对文件名调用（OS 按 UTF-16 正确解析 cwd），完成后恢复。"""
+    if _is_ascii(index_path):
+        return faiss.read_index(str(index_path))
+    prev = os.getcwd()
+    try:
+        os.chdir(str(index_path.parent))
+        return faiss.read_index(index_path.name)
+    finally:
+        os.chdir(prev)
+
+
+def _faiss_write_index(index, index_path: Path) -> None:
+    """同 _faiss_read_index：write_index 同样受非 ASCII 路径影响。"""
+    if _is_ascii(index_path):
+        faiss.write_index(index, str(index_path))
+        return
+    prev = os.getcwd()
+    try:
+        os.chdir(str(index_path.parent))
+        faiss.write_index(index, index_path.name)
+    finally:
+        os.chdir(prev)
 
 
 class VectorStore:
@@ -61,7 +98,7 @@ class VectorStore:
     # ---------- 持久化 ----------
     def persist(self, directory: Path) -> None:
         directory.mkdir(parents=True, exist_ok=True)
-        faiss.write_index(self.index, str(directory / INDEX_FILENAME))
+        _faiss_write_index(self.index, directory / INDEX_FILENAME)
         with open(directory / CHUNKS_FILENAME, "w", encoding="utf-8") as f:
             json.dump([self._chunk_to_dict(c) for c in self.chunks], f, ensure_ascii=False)
         logger.info("💾 向量库已持久化：%s，共 %d 块", directory, self.count)
@@ -74,7 +111,7 @@ class VectorStore:
         if not index_file.exists() or not chunks_file.exists():
             return None
         try:
-            index = faiss.read_index(str(index_file))
+            index = _faiss_read_index(index_file)
             with open(chunks_file, "r", encoding="utf-8") as f:
                 raw = json.load(f)
             store = cls(index.d)
