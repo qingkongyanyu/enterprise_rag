@@ -54,7 +54,6 @@ cd backend && python -m pytest tests/ -v
 backend/app/
 ├── api/            # 路由：只做参数绑定与响应
 ├── core/           # config / logging / exceptions
-├── models/         # Pydantic schemas + 领域结构 Chunk
 ├── services/       # 业务核心，全部可单测
 │   ├── chunking.py     # 分块（纯函数，易测）
 │   ├── bm25.py         # BM25 稀疏检索（自实现）

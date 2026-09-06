@@ -161,7 +161,6 @@ enterprise_rag/
 │   ├── app/
 │   │   ├── api/             # 路由层（chat / knowledge / sessions / system）
 │   │   ├── core/            # 配置 / 日志 / 异常
-│   │   ├── models/          # Pydantic 模型与领域结构
 │   │   ├── services/        # RAG 全链路（嵌入 / 分块 / 检索 / 记忆 / 编排）
 │   │   └── utils/           # 文本 / 缓存工具
 │   ├── scripts/             # init_knowledge / generate_sample_docs
